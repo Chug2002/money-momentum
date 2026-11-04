@@ -1,8 +1,10 @@
 # Money Momentum
 
+[Open the interactive app](https://money-momentum.budgetstudio.workers.dev/) · [Source repository](https://github.com/Chug2002/money-momentum)
+
 A personal finance portfolio project with account tracking, cash-flow forecasts, bill calendars, debt planning, and optional read-only Plaid connections. Built using React, TypeScript, Vinext, and Cloudflare Workers/D1.
 
-The included November 2026 budget is a fictional simulation. Manual entries and connected-bank data are separate. This repository contains source and tests, not production databases, bank credentials, or account exports.
+The public app uses fictional current-month sample data. Manual entries and connected-bank data are separate. This repository contains source and tests, not production databases, bank credentials, or account exports.
 
 ## Features
 
@@ -48,7 +50,7 @@ Bank linking and push delivery require separate service configuration. See [PLAI
 npm run build
 ```
 
-Build the independent public Cloudflare demo with `node scripts/build-cloudflare-demo.mjs`, then deploy using `cloudflare/wrangler.jsonc`. Its `/account` entry currently links to the protected private app; migrating private bank access requires separate verified authentication and database setup.
+Build the independent public Cloudflare demo with `node scripts/build-cloudflare-demo.mjs`, then deploy using `cloudflare/wrangler.jsonc`. The public deployment has no bank credentials or private database binding. Real bank migration and independent private sign-in are outside this deployment.
 
 Production deployment requires a trusted authentication gateway, database bindings, and managed runtime secrets. A custom domain also requires updated allowed origins and a Plaid redirect URI.
 
