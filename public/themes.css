@@ -1,0 +1,47 @@
+/* Appearance preferences apply across the app, including dialogs and the PIN screen. */
+html[data-theme]{color-scheme:dark}
+html[data-theme] body{background:radial-gradient(ellipse at 8% 0%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 45%),var(--theme-bg);color:var(--theme-ink)}
+html[data-theme] header,html[data-theme] .bottomNav{background:color-mix(in srgb,var(--theme-surface) 96%,transparent);border-color:var(--theme-line)}
+html[data-theme] :is(.phoneCard,.panel,.account,dialog,.phoneStats>button,.phoneStats>div){background:var(--theme-surface);border-color:var(--theme-line);color:var(--theme-ink)}
+html[data-theme] :is(button,select,input:not([type=range]),.inputmoney){background:var(--theme-raised);border-color:var(--theme-line);color:var(--theme-ink)}
+html[data-theme] button:hover{background:color-mix(in srgb,var(--theme-raised) 83%,var(--accent))}
+html[data-theme] :is(.primary,.roundAction,.topPills .active,.appTabs [aria-selected=true]){background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+html[data-theme] :is(.phoneHero,.walletDisplay,.walletDisplay.green){background:radial-gradient(ellipse at 100% 0%,color-mix(in srgb,var(--accent) 22%,transparent),transparent 70%),linear-gradient(130deg,var(--theme-hero),var(--theme-surface));border-color:color-mix(in srgb,var(--accent) 45%,var(--theme-line));color:var(--theme-ink)}
+html[data-theme] :is(.phoneHero>p,.phoneHero>span,.walletDisplay p,.walletDisplay>small,.walletDisplay .sectionhead){color:var(--theme-ink)}
+html[data-theme] :is(.muted,.phoneFootnote,.phoneStats span,.phoneStats small,.activityRow small,.actionRow small,.monthPicker,.transactionCategory small){color:var(--theme-muted)}
+html[data-theme] :is(.phoneCard a,.phoneEmpty>span,.bottomNav [aria-current=page]){color:var(--accent)}
+html[data-theme] :is(.activityRow,.actionRow,.reportRow,.transactionCategory){border-color:var(--theme-line)}
+html[data-theme] :is(.phoneEmpty,.insight,.phonePill,.matchNote,.bottomNav [aria-current=page],.subPills .active,.activityIcon){background:color-mix(in srgb,var(--accent) 10%,var(--theme-surface));border-color:color-mix(in srgb,var(--accent) 60%,var(--theme-line));color:var(--theme-ink)}
+html[data-theme] .progressTrack{background:var(--theme-raised)}
+html[data-theme] .progressTrack>span{background:var(--accent)}
+html[data-theme] :is(input,select,button):focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.themeChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.themeChoice{text-align:left;padding:14px!important;border-radius:14px;min-height:110px}
+.themeChoice[aria-pressed=true]{outline:2px solid var(--accent);outline-offset:1px}
+.themeChoice strong,.themeChoice small{display:block}.themeChoice small{font-size:10px;font-weight:400;line-height:1.5;color:var(--theme-muted);margin-top:5px}
+.themeSwatches{display:flex;margin-bottom:11px;gap:5px}.themeSwatches i{width:23px;height:15px;border-radius:5px}
+.accentLabel{display:flex!important;align-items:center;justify-content:space-between;gap:20px}
+#themeAccent{height:42px;width:65px;cursor:pointer;padding:4px}
+html[data-theme=arcade] .walletDisplay,html[data-theme=arcade] .phoneHero{box-shadow:0 0 25px #65edff0a}
+/* Keep the original quiet icon tabs; only the selected destination is highlighted. */
+html[data-theme] .bottomNav button{background:transparent;border:0;color:var(--theme-muted)}
+html[data-theme] .bottomNav button:hover{background:color-mix(in srgb,var(--accent) 6%,transparent)}
+html[data-theme] .bottomNav button[aria-current=page]{background:color-mix(in srgb,var(--accent) 7%,transparent);color:var(--accent)}
+
+.customThemeFields{padding:15px;border:1px solid var(--theme-line);border-radius:14px;margin:18px 0}.customThemeFields h4{margin:0 0 12px}.customThemeFields input[type=color]{height:42px;width:65px;cursor:pointer;padding:4px}.customThemeFields[hidden]{display:none!important}
+
+/* Continue the tab-bar color into iOS's reserved bottom area. */
+html[data-theme][data-phone-layout=true],html[data-theme][data-phone-layout=true] body{background:var(--theme-surface)}
+html[data-theme][data-phone-layout=true] body>main{background:radial-gradient(ellipse at 8% 0%,color-mix(in srgb,var(--accent) 10%,transparent),transparent 50%),var(--theme-bg)}
+.calendarToolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 18px}.calendarToolbar h2{font-size:20px;margin:0;text-align:center}.calendarToolbar button{min-height:44px;min-width:44px;font-size:25px;padding:5px}
+.calendarCard{border:1px solid var(--theme-line);background:var(--theme-surface);padding:12px 6px;border-radius:18px;margin:18px 0}.calendarGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.calendarWeekday{text-align:center;font-size:10px;color:var(--theme-muted);padding:8px 0}.calendarDay{min-width:0;min-height:66px;padding:7px 1px;border:1px solid transparent!important;background:transparent!important;display:flex;flex-direction:column;align-items:center;gap:5px;border-radius:10px}.calendarDay>span{font-size:13px}.calendarDay small{font-size:9px;white-space:nowrap;max-width:100%}.calendarDay.isToday{border-color:var(--theme-line)!important}.calendarDay[aria-pressed=true]{background:color-mix(in srgb,var(--accent) 16%,var(--theme-surface))!important;border-color:var(--accent)!important}.calendarDay.isToday>span{color:var(--accent)}.calendarMarkers{display:flex;gap:4px;height:6px}.billDot,.incomeDot{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--accent)}.incomeDot{background:var(--green)}.calendarLegend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;font-size:9px;color:var(--theme-muted);margin:14px 0 3px}.calendarLegend span{display:flex;align-items:center;gap:5px}.calendarBill{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:1px solid var(--theme-line);font-size:12px;flex-wrap:wrap}.calendarBill>div{flex:1;min-width:80px}.calendarBill small{display:block;font-size:10px;color:var(--theme-muted);margin-top:5px}.calendarBill button{min-height:44px;font-size:11px}.calendarDayDetail>button{min-height:44px;margin-top:14px}.calendarActivityHeading{margin-top:24px!important}
+html[data-phone-layout=true] body>.bottomNav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));align-items:stretch;gap:0;border-radius:16px 16px 0 0;padding-left:max(3px,env(safe-area-inset-left));padding-right:max(3px,env(safe-area-inset-right))}.bottomNav button{padding-left:0;padding-right:0}.bottomNav small{font-size:9px}.bottomNav button>span{font-size:21px}
+@media(max-width:375px){.bottomNav small{font-size:8px}.calendarDay{min-height:62px}.calendarGrid{gap:2px}.calendarDay small{font-size:8px}}
+
+/* Raise the tab controls above the iPhone bottom edge. */
+html[data-phone-layout=true] body>.bottomNav{padding-bottom:calc(max(12px,var(--app-safe-bottom)) + 16px)}
+
+.cardSections{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}.cardSections button{min-height:48px;border-radius:13px;font-size:12px}.cardSections [aria-pressed=true]{background:var(--accent)!important;color:var(--accent-ink)!important;border-color:var(--accent)!important}
+html[data-theme] .activityRow strong.negative{color:#ff9ca9}html[data-theme] .activityRow strong.positive{color:#7ce0b8}
+
+.spendingDonut{width:200px;height:200px;border-radius:50%;display:grid;place-items:center;margin:25px auto}.spendingDonut>div{width:148px;height:148px;border-radius:50%;background:var(--theme-surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px}.spendingDonut small{font-size:9px;color:var(--theme-muted)}.spendingDonut strong{font-size:25px}.categoryColor{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px}.categoryTiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}.categoryTiles>div{background:var(--theme-raised);border:1px solid var(--theme-line);border-radius:12px;padding:13px;min-width:0}.categoryTiles span,.categoryTiles strong,.categoryTiles small{display:block;overflow-wrap:anywhere}.categoryTiles span{font-size:11px}.categoryTiles strong{font-size:19px;margin:8px 0}.categoryTiles small{font-size:9px;color:var(--theme-muted)}
