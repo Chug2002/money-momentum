@@ -1,0 +1,27 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+(async()=>{
+ const nodes=new Map(),events=[];let options,destroyed=0;
+ const element=()=>({innerHTML:'',textContent:'',className:'',before(){},click(){},scrollIntoView(){}});
+ const get=id=>{if(!nodes.has(id))nodes.set(id,element());return nodes.get(id)};
+ const store=new Map(),sessionStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k)};
+ const window={addEventListener(){},dispatchEvent:event=>events.push(event),Plaid:{create(value){options=value;return {open(){},destroy(){destroyed++}}}}};
+ const document={hidden:false,getElementById:get,createElement:element,head:{append(){}},addEventListener(){}};
+ const fetch=async url=>({ok:true,json:async()=>url.endsWith('/status')?{configured:true,environment:'production'}:url.endsWith('/link-token')?{link_token:'temporary-test-token',session_id:'temporary-test-session',expiration:new Date(Date.now()+3600000).toISOString()}:{items:[],transactions:[]}});
+ vm.runInNewContext(fs.readFileSync('public/bank-link.js','utf8'),{window,document,fetch,sessionStorage,navigator:{onLine:true},location:{search:''},Date,Intl,URLSearchParams,CustomEvent:class{constructor(type,value){this.type=type;this.detail=value?.detail}},setInterval(){}});
+ for(let i=0;i<8;i++)await new Promise(setImmediate);
+ await window.MomentumBanks.connect();
+ options.onExit({error_code:'INVALID_LINK_TOKEN',display_message:'private provider detail must not be copied'});
+ assert.match(get('bankMessage').textContent,/expired|start.*again/i,'expired Link token tells the person how to retry');
+ assert.match(get('bankMessage').textContent,/INVALID_LINK_TOKEN/,'safe provider code is retained');
+ assert(!get('bankMessage').textContent.includes('private provider detail'));
+ assert.equal(sessionStorage.getItem('moneyPlaidLink'),null,'failed linking state is cleared before a new attempt');
+ assert.equal(destroyed,1,'the closed Link instance is released');
+ await window.MomentumBanks.connect();options.onExit({error_code:'INSTITUTION_DOWN'});
+ assert.match(get('bankMessage').textContent,/bank.*unavailable|bank.*temporar/i);
+ await window.MomentumBanks.connect();options.onExit({error_code:'<script>unsafe</script>'});
+ assert(!get('bankMessage').textContent.includes('<script>'));
+ await window.MomentumBanks.connect();options.onExit(null);
+ assert.match(get('bankMessage').textContent,/closed.*No new bank was connected/);
+ assert.equal(events.at(-1).detail.error,false,'ordinary cancellation is not presented as a service failure');
+ console.log('Passed: actionable Link errors, safe codes, discarded provider detail, cleared linking state, instance cleanup, and ordinary cancellation.');
+})().catch(error=>{console.error(error);process.exitCode=1});

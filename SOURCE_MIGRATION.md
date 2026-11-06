@@ -1,3 +1,5 @@
+> **Historical document; current status updated November 6, 2026.** The standalone workers.dev app now includes public tutorial, Firebase sign-in, its own D1 database, and optional Plaid linking. The earlier tutorial-only restriction described below was superseded. No personal records or bank tokens were migrated from the separately hosted Sites app, which remains independent. Use the current README, SECURITY.md, and docs/DEPLOYMENT.md for the active configuration.
+
 # Money Momentum source consolidation
 
 Source inspected: Sites commit b89c6bc9000f2da3aafca8d085d86e8cc3725f8b, retrieved November 6, 2026. All 162 tracked source paths are represented in this repository. Missing UI components, hooks, examples, and npm configuration were copied. Existing matching files were retained. The GitHub app already had newer product-tour, demo-isolation, privacy-screen, and test improvements; those versions were kept instead of replacing them with older files. Package metadata, setup documentation, and ignore rules retain the repository's maintained versions.

@@ -1,71 +1,108 @@
 # Money Momentum
 
-[Open the tutorial (fictional data only)](https://money-momentum.budgetstudio.workers.dev/) · [Source repository](https://github.com/Chug2002/money-momentum)
+[Open the app](https://money-momentum.budgetstudio.workers.dev/) · [Try the fictional-data tutorial](https://money-momentum.budgetstudio.workers.dev/demo) · [Sign in](https://money-momentum.budgetstudio.workers.dev/login)
 
-A personal finance portfolio project with account tracking, cash-flow forecasts, bill calendars, debt planning, and optional read-only Plaid connections. Built using React, TypeScript, Vinext, and Cloudflare Workers/D1.
+A personal finance web application with a public tutorial and private per-user planning. It combines manual accounts, bills, debt planning, cash-flow projections, and optional read-only bank data through Plaid.
 
-The public app uses fictional current-month sample data. Manual entries and connected-bank data are separate. This repository contains source and tests, not production databases, bank credentials, or account exports.
+The standalone app runs on Cloudflare Workers with Firebase Authentication and D1 storage. Its browser UI uses HTML, CSS, and JavaScript, with TypeScript server handlers. The repository also retains the React/Vinext framework shell and original Sites configuration; the current standalone deployment uses `cloudflare/full-worker.ts`.
 
-## Features
+## See the interface
 
-- Shared desktop and phone screens for Dashboard, Cards, Bills, Debt, Credit, Trends, and Calendar.
-- An optional eight-step tour with Skip, Back, and replay controls.
-- An interactive sample-data demo isolated from private financial records.
-- A home-screen app experience and customizable themes.
-- Income, spending, transfers, credit payments, and per-account running balances.
-- Bill calendars, cash cushion forecasts, debt payoff estimates, and manual credit-score tracking.
-- Versioned account saves with conflict handling across devices.
-- Optional Plaid account linking, transaction synchronization, and disconnect cleanup.
-- Optional consent-based Web Push, daily summaries, and budget alerts.
-- A device PIN privacy screen with inactivity locking.
+![Dashboard with fictional sample data](docs/images/demo-dashboard.png)
 
-## Architecture
+![Manual account view with fictional data](docs/images/demo-accounts.png)
 
-`public/` contains the browser interface and calculations. `app/` contains server routes and validation. Cloudflare D1 stores user-scoped records; `drizzle/` contains migrations. Plaid calls and bank-token encryption run server-side. Hosted authentication comes from the Sites gateway.
+These screenshots use the isolated tutorial's fictional accounts. Demo changes stay in that demo session. Real account records are loaded only after sign-in.
 
-| Area | Technology |
-| --- | --- |
-| Interface | HTML/CSS, JavaScript, React framework shell |
-| Server | TypeScript, Vinext, Cloudflare Workers |
-| Storage | D1/SQLite, Drizzle schema and migrations |
-| Banking | Optional Plaid Transactions integration |
-| Notifications | Web Push and VAPID |
-| Tests | Node assertions, isolated SQLite, mocked services |
+## What it does
 
-## Local setup
+- Google or email/password signup and login, password confirmation, email verification, password reset, and session logout.
+- Account-owned manual records, account-scoped device drafts, versioned saves, and cross-device conflict handling.
+- Desktop and phone layouts for Dashboard, Cards, Bills, Debt, Credit, Trends, and Calendar.
+- Manual income, expenses, transfers, credit-card payments, running balances, and backups.
+- Bill calendars, cash cushion forecasts, debt payoff estimates, and manual credit-score entries.
+- Optional Plaid account linking, transaction synchronization, refresh, and disconnect cleanup.
+- Optional consent-based Web Push notifications and an hourly scheduled notification job.
+- A device PIN privacy screen and customizable themes.
 
-Use Node.js 24 or newer for the complete test suite, which uses built-in SQLite.
+Credit scores are manually entered; no Experian integration is implemented. Bank data is separate from the manual log and does not initiate payments or transfers.
+
+## How the pieces connect
+
+```mermaid
+flowchart LR
+  B[Browser: planner and account-scoped drafts] --> W[Cloudflare Worker: routes and authorization]
+  B --> F[Firebase: Google or email identity]
+  F --> B
+  W --> F
+  W --> D[(D1: account-owned records)]
+  W --> P[Plaid: authorized bank data]
+  G[GitHub source and checks] --> C[Cloudflare Builds]
+  C --> W
+```
+
+The browser signs in through Firebase and exchanges a verified ID token for a short-lived Worker session. The Worker authorizes API requests, strips untrusted identity headers, and scopes queries to the verified user. Plaid credentials and encrypted bank access tokens stay server-side. [Read the detailed architecture](docs/ARCHITECTURE.md).
+
+| Area | Start reading here |
+|---|---|
+| Public/private routing | `cloudflare/full-worker.ts` |
+| Login UI and session verification | `public/firebase-login.js`, `cloudflare/auth.mjs` |
+| Device draft isolation | `public/account-storage.js` |
+| Account saving | `public/device-settings.js`, `app/api/log/route.ts` |
+| Planning calculations | `public/phone-core.js`, `public/tracker.js` |
+| Banking | `public/bank-link.js`, `app/plaid-server.ts` |
+| Schema | `drizzle/`, `cloudflare/auth-schema.sql` |
+| Standalone build and deployment | `scripts/build-cloudflare-full.mjs`, `cloudflare/wrangler.jsonc` |
+
+## Run the checks locally
+
+Use Node.js 24 for the full suite; tests use its built-in SQLite. No real provider credentials are required for the automated tests.
 
 ```sh
 npm ci
 npm test
-npm run dev
+npm run build:cloudflare
+npm run check:cloudflare
 ```
 
-Open the loopback URL printed by the server. The development adapter simulates sign-in at `/signin-with-chatgpt?return_to=/`; this is for local development only. Apply the SQL migrations in `drizzle/` to a configured local D1 database to exercise account saves. The hosting manifest retains the existing Sites project ID and its `DB` binding so future Sites updates target the same app.
+The final command packages the Worker with `--dry-run`; it does not deploy or change a remote database. Generated assets and packaged code are under `dist/` and are ignored by Git.
 
-Bank linking and push delivery require separate service configuration. See [PLAID_SETUP.md](PLAID_SETUP.md), [NOTIFICATIONS.md](NOTIFICATIONS.md), and [SECURITY.md](SECURITY.md). Tests use fake banks and do not connect to real accounts.
+For a local preview of signed-out public pages, build first, then run:
 
 ```sh
-npm run build
+npx wrangler dev --config cloudflare/wrangler.jsonc --local --ip 127.0.0.1 --port 8787 --var APP_ORIGIN:http://127.0.0.1:8787 --var FIREBASE_WEB_CONFIG:{} --inspector-port 0
 ```
 
-Build the independent public Cloudflare demo with `node scripts/build-cloudflare-demo.mjs`, then deploy using `cloudflare/wrangler.jsonc`. The public deployment has no bank credentials or private database binding. Real bank migration and independent private sign-in are outside this deployment.
+Open `http://127.0.0.1:8787/demo`. This preview intentionally disables Firebase configuration. It is not a production identity or real-bank test. Integration tests cover private session-to-database behavior with synthetic local records. Use a separately configured HTTPS environment for live provider verification.
 
-Production deployment requires a trusted authentication gateway, database bindings, and managed runtime secrets. A custom domain also requires updated allowed origins and a Plaid redirect URI.
+The retained framework development path is `npm run dev`. Its local Sites identity adapter is a development convenience, not the authentication mechanism used by the standalone public app.
 
-## Security and limitations
+## Automated pipeline and deployment
 
-The code implements authenticated API checks, user-scoped parameterized database queries, origin checks for writes, validation, AES-GCM protection of Plaid tokens, and salted PBKDF2 device-PIN hashing. The PIN is a browser privacy screen, not encryption of financial records. See [SECURITY.md](SECURITY.md).
+GitHub Actions runs the test suite before allowing the dependent Cloudflare packaging job to start. The second job builds the full app, checks Wrangler packaging without deployment, and saves a commit-named artifact. No production credentials are required by that workflow.
 
-This is a portfolio project, not a certified financial product. Tests do not establish production readiness or regulatory compliance. No independent security audit was performed during repository preparation.
+Cloudflare Builds is a separate connected service for the deployed app. Its production branch is `main`. The existing dashboard command `node scripts/build-cloudflare-demo.mjs` is kept compatible through a wrapper that invokes the full build. The deploy command uses `cloudflare/wrangler.jsonc`. A successful GitHub test run alone is not proof of a successful Cloudflare deployment or bank connection.
 
-## Review guide
+[Deployment and rollback guide](docs/DEPLOYMENT.md) · [Verification checklist and known limits](docs/VERIFICATION.md) · [Test-first change walkthrough](docs/TDD_BANK_FEEDBACK.md)
 
-Start with `public/phone-core.js` for calculations, `app/api/log/route.ts` for versioned saves, `app/plaid-server.ts` for bank-token handling, and `test-plaid.cjs` / `test-log.cjs` for authorization and isolation tests. Starter and vendor notices are retained.
+## Provider configuration
 
-The public demo uses the same application screens with fictional current-month data and separate session storage. Production bank credentials, live databases, runtime credentials and original private Git history are excluded.
+Firebase must have Google and email/password providers enabled and the app hostname authorized. `FIREBASE_WEB_CONFIG` contains public web-app configuration, not a service-account key. The browser and server both verify the email requirement; the server verifies the signed provider identity before issuing a session.
 
-## Source and saved data
+For the deployed standalone app, Plaid's allowed redirect list must include exactly:
 
-The hosted app source has been reconciled into this repository; see [SOURCE_MIGRATION.md](SOURCE_MIGRATION.md). The workers.dev address is tutorial-only. Use the existing signed-in Sites app for personal records. A GitHub merge stores code; it does not copy, erase, or back up the live database.
+```text
+https://money-momentum.budgetstudio.workers.dev/account
+```
+
+Keep existing addresses needed by other deployments. Store runtime credentials directly in Cloudflare. See [PLAID_SETUP.md](PLAID_SETUP.md), [SECURITY.md](SECURITY.md), and [NOTIFICATIONS.md](NOTIFICATIONS.md).
+
+## Limits and project scope
+
+This is an independently developed portfolio project, not a certified financial product. Provider authorization, bank coverage, available transaction history, and delivery to real notification devices require separate live checks. Automated tests use mocked providers and do not prove regulatory compliance or general production readiness.
+
+Device drafts and exported backups are not encrypted by the PIN privacy screen. A browser controlled by another person can bypass browser-only PIN checks. See the security guide for trust boundaries and remaining review areas.
+
+The separately hosted ChatGPT Site and its records/bank links are independent. The standalone app starts fresh; no financial-data migration was performed. The retained `.openai/hosting.json` identifies that older Site and is not used by the standalone Wrangler configuration. [Historical source consolidation notes](SOURCE_MIGRATION.md) are retained with a current-status correction.
+
+Source code, tests, and fictional samples belong in this repository. Passwords, provider secrets, session cookies, bank tokens, private financial screenshots, and database exports do not.
