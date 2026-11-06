@@ -5,7 +5,7 @@ import {notificationsRoute} from '../app/notifications-server';
 import {html} from '../app/ui';
 
 const security={
- 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Cross-Origin-Opener-Policy':'same-origin-allow-popups',
+ 'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Cross-Origin-Opener-Policy':'same-origin-allow-popups',
  'Content-Security-Policy':"default-src 'self'; script-src 'self' https://cdn.plaid.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://*.plaid.com; frame-src https://*.plaid.com https://*.firebaseapp.com https://accounts.google.com; connect-src 'self' https://*.plaid.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.firebaseapp.com;  frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
 };
 const json=(message:string,status:number)=>Response.json({error:message},{status});
@@ -34,7 +34,7 @@ async function handle(request:Request,env:any){
  if(url.pathname==='/signin-with-chatgpt')return Response.redirect(url.origin+'/login',302);
  if(url.pathname==='/logout'||url.pathname==='/signout-with-chatgpt')return new Response('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Sign out</title><link rel="stylesheet" href="/welcome.css"></head><body><main><h1>Sign out?</h1><form method="post" action="/api/auth/logout"><button class="button">Sign out of this device</button></form><p><a href="/account">Back to my account</a></p></main></body></html>',{headers:{'Content-Type':'text/html;charset=utf-8'}});
  if(url.pathname==='/')url.pathname='/welcome.html';
- if(['/login','/setup'].includes(url.pathname))url.pathname='/cloudflare-login.html';
+ if(['/login','/signup','/setup'].includes(url.pathname))url.pathname='/cloudflare-login.html';
  if(['/demo','/demo/'].includes(url.pathname))url.pathname='/demo.html';
  return env.ASSETS.fetch(new Request(url,request));
 }

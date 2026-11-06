@@ -9,7 +9,7 @@ for(const file of ['app.js','tracker.js','phone-app.js','device-settings.js','ba
  writeFileSync(out+'/'+file,source);
 }
 await build({entryPoints:['public/firebase-login.js'],bundle:true,minify:true,platform:'browser',target:'es2020',outfile:out+'/cloudflare-login.js'});
-let settings=readFileSync(out+'/device-settings.js','utf8').replaceAll('/signin-with-chatgpt?return_to=/','/login').replaceAll('/signout-with-chatgpt?return_to=/','/logout');writeFileSync(out+'/device-settings.js',settings);
+let settings=readFileSync(out+'/device-settings.js','utf8').replaceAll('/signin-with-chatgpt?return_to=/','/login').replaceAll('/signout-with-chatgpt?return_to=/','/logout');settings=settings.replace('Sign in again if needed</a>','Sign in again if needed</a><p><a href="/logout">Sign out of this device</a></p>');writeFileSync(out+'/device-settings.js',settings);
 writeFileSync(out+'/notification-worker.js',readFileSync(out+'/notification-worker.js','utf8').replaceAll('/?view=app&alerts=1','/account?view=app&alerts=1'));
 const manifest=JSON.parse(readFileSync('public/manifest.webmanifest','utf8'));manifest.start_url='/account';writeFileSync(out+'/manifest.webmanifest',JSON.stringify(manifest));
 console.log('Prepared the full Cloudflare app, demo, bank-linking client, and Google/email login.');

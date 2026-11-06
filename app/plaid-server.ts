@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-class ApiError extends Error { constructor(public status:number, message:string, public code='REQUEST_FAILED'){super(message)} }
+class ApiError extends Error { constructor(public status:number, message:string, public code='REQUEST_FAILED',public requestId=''){super(message)} }
 const E=()=>env as unknown as Record<string,any>;
 const ORIGIN=(env as any).APP_ORIGIN||'https://money-momentum.honeyamber64.chatgpt.site';
 const noStore={'Cache-Control':'no-store','Content-Type':'application/json','X-Content-Type-Options':'nosniff'};
@@ -7,7 +7,27 @@ const now=()=>Math.floor(Date.now()/1000);
 function ready(){const e=E();return !!(e.DB&&e.PLAID_CLIENT_ID&&e.PLAID_SECRET&&/^[a-fA-F0-9]{64}$/.test(e.PLAID_TOKEN_ENCRYPTION_KEY||'')&&['sandbox','production'].includes(e.PLAID_ENV))}
 function configured(){if(!ready())throw new ApiError(503,'Bank linking is still being set up. You can continue using the daily tracker.','SETUP_REQUIRED')}
 function environment(){return E().PLAID_ENV}
-async function api(path:string,body:Record<string,unknown>){const e=E();let r:Response;try{r=await fetch(`https://${environment()}.plaid.com${path}`,{method:'POST',headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},body:JSON.stringify({client_id:e.PLAID_CLIENT_ID,secret:e.PLAID_SECRET,...body}),signal:AbortSignal.timeout(25000)})}catch{throw new ApiError(502,'The bank service did not respond. Please try again.','BANK_UNAVAILABLE')};const data:any=await r.json();if(!r.ok){const code=typeof data.error_code==='string'?data.error_code:'BANK_ERROR';if(code==='TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION')throw new ApiError(409,'Transaction history changed during the update. Try refreshing again.',code);throw new ApiError(code==='ITEM_LOGIN_REQUIRED'?409:502,code==='ITEM_LOGIN_REQUIRED'?'Your bank needs you to reconnect. Disconnect this connection and link it again.':['INVALID_API_KEYS','UNAUTHORIZED_ENVIRONMENT','INVALID_ACCESS_TOKEN'].includes(code)?'The bank connection needs its setup checked. Contact the app owner; retrying your bank password will not fix this.':code==='INVALID_LINK_CUSTOMIZATION'?'The app owner needs to complete the Plaid Link use-case setup before connecting a bank.':code==='PRODUCT_NOT_ENABLED'?'Live Transactions access is not enabled for this Plaid account yet.':code==='INVALID_REDIRECT_URI'?'The app owner needs to register Money Momentum’s return address in Plaid.':'The bank service could not complete this request. Please try again.',code)}return data}
+async function api(path:string,body:Record<string,unknown>){
+ const e=E();let r:Response;
+ try{r=await fetch(`https://${environment()}.plaid.com${path}`,{method:'POST',headers:{'Content-Type':'application/json','Plaid-Version':'2020-09-14'},body:JSON.stringify({client_id:e.PLAID_CLIENT_ID,secret:e.PLAID_SECRET,...body}),signal:AbortSignal.timeout(25000)})}
+ catch{throw new ApiError(502,'The bank service did not respond. Please try again.','BANK_UNAVAILABLE')}
+ let data:any;try{data=await r.json()}catch{throw new ApiError(502,'The bank service returned an unreadable response. Please try again.','BANK_RESPONSE_INVALID')}
+ if(!r.ok){
+  const code=typeof data.error_code==='string'&&/^[A-Z0-9_]+$/.test(data.error_code)?data.error_code:'BANK_ERROR';
+  const requestId=typeof data.request_id==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(data.request_id)?data.request_id:'';
+  const redirectError=code==='INVALID_REDIRECT_URI'||code==='INVALID_FIELD'&&/redirect_uri/i.test(data.error_message||'');
+  const message=code==='TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION'?'Transaction history changed during the update. Try refreshing again.':
+   code==='ITEM_LOGIN_REQUIRED'?'Your bank needs you to reconnect. Disconnect this connection and link it again.':
+   ['INVALID_API_KEYS','UNAUTHORIZED_ENVIRONMENT','INVALID_ACCESS_TOKEN'].includes(code)?'The bank connection needs its setup checked. Contact the app owner; retrying your bank password will not fix this.':
+   code==='INVALID_LINK_CUSTOMIZATION'?'The app owner needs to complete the Plaid Link use-case setup before connecting a bank.':
+   ['PRODUCT_NOT_ENABLED','INVALID_PRODUCT'].includes(code)?'Live Transactions access is not enabled for this Plaid account yet.':
+   redirectError?'Add https://money-momentum.budgetstudio.workers.dev/account to Allowed Redirect URIs in the Plaid dashboard, then try again.':
+   'The bank service could not complete this request. Please try again.';
+  throw new ApiError(['TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION','ITEM_LOGIN_REQUIRED'].includes(code)?409:502,message,code,requestId);
+ }
+ return data;
+}
+
 async function cipherKey(){const hex=E().PLAID_TOKEN_ENCRYPTION_KEY;return crypto.subtle.importKey('raw',Uint8Array.from(hex.match(/../g).map((h:string)=>parseInt(h,16))),{name:'AES-GCM'},false,['encrypt','decrypt'])}
 function b64(b:Uint8Array){return btoa(String.fromCharCode(...b))}function bytes(s:string){return Uint8Array.from(atob(s),c=>c.charCodeAt(0))}
 export async function seal(token:string,user:string,item:string){const iv=crypto.getRandomValues(new Uint8Array(12));const out=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:new TextEncoder().encode(user+':'+item)},await cipherKey(),new TextEncoder().encode(token));return b64(iv)+'.'+b64(new Uint8Array(out))}
@@ -24,6 +44,6 @@ if(action==='exchange'){if(typeof input.public_token!=='string'||input.public_to
 if(action==='sync'){if(typeof input.item_id!=='string')throw new ApiError(400,'Select a bank to refresh.');await sync(user,input.item_id);return dataFor(user)}
 if(action==='disconnect'){const item=await owned(user,input.item_id);if(item.lease_until>now())throw new ApiError(409,'Wait until the current refresh completes before disconnecting.');await api('/item/remove',{access_token:await unseal(item.token_cipher,user,item.id)});await db().batch([db().prepare('DELETE FROM plaid_transactions WHERE user_id=? AND item_id=?').bind(user,item.id),db().prepare('DELETE FROM plaid_items WHERE user_id=? AND id=?').bind(user,item.id)]);return {disconnected:true}}
 throw new ApiError(404,'Not found.')}
-export async function bankRoute(request:Request,action:string){try{return new Response(JSON.stringify(await handle(request,action)),{headers:noStore})}catch(e){if(e instanceof ApiError)return new Response(JSON.stringify({error:e.message,code:e.code}),{status:e.status,headers:noStore});return new Response(JSON.stringify({error:'Bank data is temporarily unavailable. Please try again.',code:'SERVER_ERROR'}),{status:500,headers:noStore})}}
+export async function bankRoute(request:Request,action:string){try{return new Response(JSON.stringify(await handle(request,action)),{headers:noStore})}catch(e){if(e instanceof ApiError)return new Response(JSON.stringify({error:e.message,code:e.code,...(e.requestId?{request_id:e.requestId}:{})}),{status:e.status,headers:noStore});return new Response(JSON.stringify({error:'Bank data is temporarily unavailable. Please try again.',code:'SERVER_ERROR'}),{status:500,headers:noStore})}}
 
 export async function notificationBankSnapshot(user:string){const items=await dataFor(user);for(const item of items.items){try{await sync(user,item.id)}catch{}}return dataFor(user)}
