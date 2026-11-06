@@ -1,6 +1,6 @@
 # Money Momentum
 
-[Open the interactive app](https://money-momentum.budgetstudio.workers.dev/) · [Source repository](https://github.com/Chug2002/money-momentum)
+[Open the tutorial (fictional data only)](https://money-momentum.budgetstudio.workers.dev/) · [Source repository](https://github.com/Chug2002/money-momentum)
 
 A personal finance portfolio project with account tracking, cash-flow forecasts, bill calendars, debt planning, and optional read-only Plaid connections. Built using React, TypeScript, Vinext, and Cloudflare Workers/D1.
 
@@ -42,7 +42,7 @@ npm test
 npm run dev
 ```
 
-Open the loopback URL printed by the server. The development adapter simulates sign-in at `/signin-with-chatgpt?return_to=/`; this is for local development only. Apply the SQL migrations in `drizzle/` to a configured local D1 database to exercise account saves. The hosting manifest declares `DB` without a production project ID.
+Open the loopback URL printed by the server. The development adapter simulates sign-in at `/signin-with-chatgpt?return_to=/`; this is for local development only. Apply the SQL migrations in `drizzle/` to a configured local D1 database to exercise account saves. The hosting manifest retains the existing Sites project ID and its `DB` binding so future Sites updates target the same app.
 
 Bank linking and push delivery require separate service configuration. See [PLAID_SETUP.md](PLAID_SETUP.md), [NOTIFICATIONS.md](NOTIFICATIONS.md), and [SECURITY.md](SECURITY.md). Tests use fake banks and do not connect to real accounts.
 
@@ -64,4 +64,8 @@ This is a portfolio project, not a certified financial product. Tests do not est
 
 Start with `public/phone-core.js` for calculations, `app/api/log/route.ts` for versioned saves, `app/plaid-server.ts` for bank-token handling, and `test-plaid.cjs` / `test-log.cjs` for authorization and isolation tests. Starter and vendor notices are retained.
 
-The public demo uses the same application screens with fictional current-month data and separate session storage. Production bank credentials, live databases, deployment identities, and original private Git history are excluded.
+The public demo uses the same application screens with fictional current-month data and separate session storage. Production bank credentials, live databases, runtime credentials and original private Git history are excluded.
+
+## Source and saved data
+
+The hosted app source has been reconciled into this repository; see [SOURCE_MIGRATION.md](SOURCE_MIGRATION.md). The workers.dev address is tutorial-only. Use the existing signed-in Sites app for personal records. A GitHub merge stores code; it does not copy, erase, or back up the live database.
