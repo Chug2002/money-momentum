@@ -46,3 +46,5 @@ yarn-error.log*
 
 # Safe configuration template
 !.env.example
+
+/cloudflare/dist/

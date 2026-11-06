@@ -1,13 +1,34 @@
 {
   "name": "money-momentum",
-  "main": "demo-worker.mjs",
-  "compatibility_date": "2026-11-04",
+  "main": "full-worker.ts",
+  "compatibility_date": "2026-11-06",
   "workers_dev": true,
+  "keep_vars": true,
   "assets": {
-    "directory": "../dist/cloudflare-demo",
+    "directory": "../dist/cloudflare-full",
     "binding": "ASSETS",
     "run_worker_first": true,
     "html_handling": "none"
   },
-  "preview_urls": false
+  "preview_urls": false,
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "money-momentum-private",
+      "database_id": "a1223ad4-a6a3-42a2-a9fa-6685128c27d9"
+    }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://money-momentum.budgetstudio.workers.dev",
+    "PLAID_ENV": "production",
+    "PLAID_REDIRECT_URI": "https://money-momentum.budgetstudio.workers.dev/account"
+  },
+  "triggers": {
+    "crons": [
+      "0 * * * *"
+    ]
+  }
 }

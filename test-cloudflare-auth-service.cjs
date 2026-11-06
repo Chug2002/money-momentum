@@ -1,0 +1,19 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{DatabaseSync}=require('node:sqlite');
+(async()=>{
+ const {generateKeyPair,SignJWT,exportJWK,createLocalJWKSet}=await import('jose');const {authRoute,sessionUser,webConfig,verifyFirebaseIdToken}=await import('./cloudflare/auth.mjs');
+ const pair=await generateKeyPair('RS256'),jwk=await exportJWK(pair.publicKey);jwk.kid='test';const keys=createLocalJWKSet({keys:[jwk]}),config={apiKey:'public-api-key',projectId:'money-test',authDomain:'money-test.firebaseapp.com',appId:'test-app'};
+ const now=Math.floor(Date.now()/1000);async function token(claims={}){return new SignJWT({email:'owner@example.test',email_verified:true,auth_time:now,...claims}).setProtectedHeader({alg:'RS256',kid:'test'}).setIssuer('https://securetoken.google.com/money-test').setAudience('money-test').setSubject('owner-id').setIssuedAt(now).setExpirationTime(now+3600).sign(pair.privateKey)}
+ assert.equal((await verifyFirebaseIdToken(await token(),config,keys)).sub,'owner-id');for(const claims of [{email_verified:false},{auth_time:now+600},{auth_time:now-600}])await assert.rejects(verifyFirebaseIdToken(await token(claims),config,keys));await assert.rejects(verifyFirebaseIdToken(await token(),{...config,projectId:'wrong-project'},keys));assert.equal(webConfig({}),null);
+ const sqlite=new DatabaseSync(':memory:');sqlite.exec(fs.readFileSync('cloudflare/auth-schema.sql','utf8'));
+ const wrap=sql=>({values:[],bind(...v){this.values=v;return this},async first(){return sqlite.prepare(sql).get(...this.values)||null},async run(){return {meta:{changes:Number(sqlite.prepare(sql).run(...this.values).changes)}}}});
+ const env={APP_ORIGIN:'https://money.test',FIREBASE_WEB_CONFIG:JSON.stringify(config),DB:{prepare:wrap}},dependencies={keys,fetcher:async()=>Response.json({users:[{localId:'owner-id',email:'owner@example.test',emailVerified:true,validSince:now-60}]})};
+ const request=(action,body,headers={})=>new Request(env.APP_ORIGIN+'/api/auth/'+action,{method:'POST',headers:{Origin:env.APP_ORIGIN,'Content-Type':'application/json',...headers},body:JSON.stringify(body)});
+ const identityToken=await token();let response=await authRoute(request('session',{idToken:identityToken}, {Origin:'https://attacker.test'}),env,'session',dependencies);assert.equal(response.status,403);
+ response=await authRoute(request('session',{idToken:identityToken}),env,'session',dependencies);assert.equal(response.status,200);const cookie=response.headers.get('Set-Cookie');assert(cookie.includes('Secure; HttpOnly; SameSite=Lax'));const userRequest=new Request(env.APP_ORIGIN,{headers:{Cookie:cookie.split(';')[0]}});assert.equal((await sessionUser(userRequest,env)).userId,'firebase:owner-id');
+ assert.equal(await sessionUser(new Request(env.APP_ORIGIN,{headers:{'oai-authenticated-user-id':'firebase:owner-id'}}),env),null);
+ response=await authRoute(request('session',{idToken:identityToken}),env,'session',{...dependencies,fetcher:async()=>Response.json({users:[{localId:'owner-id',email:'owner@example.test',emailVerified:true,disabled:true}]})});assert.equal(response.status,401);
+ response=await authRoute(request('session',{idToken:identityToken.slice(0,-12)+'invalidxxxxx'}),env,'session',dependencies);assert.equal(response.status,401);
+ await authRoute(request('logout',{}, {Cookie:cookie.split(';')[0]}),env,'logout',dependencies);assert.equal(await sessionUser(userRequest,env),null);
+ assert.equal(sqlite.prepare('SELECT COUNT(*) n FROM auth_users').get().n,1);
+ console.log('Passed: signed Google/Firebase identity verification, verified-email requirement, project/audience binding, recent-auth requirement, disabled-user rejection, secure sessions, logout, CSRF, forged identity rejection.');
+})().catch(e=>{console.error(e);process.exitCode=1});
