@@ -22,6 +22,7 @@
     }
   ],
   "vars": {
+    "FIREBASE_WEB_CONFIG": "{\"apiKey\":\"AIzaSyAa8Q9D8tyJBENVzlSWTSuvbYpkn-DkZg0\",\"authDomain\":\"money-momentum-f30aa.firebaseapp.com\",\"projectId\":\"money-momentum-f30aa\",\"appId\":\"1:914657467660:web:69b09622cbc44e29a6fd29\"}",
     "APP_ORIGIN": "https://money-momentum.budgetstudio.workers.dev",
     "PLAID_ENV": "production",
     "PLAID_REDIRECT_URI": "https://money-momentum.budgetstudio.workers.dev/account"

@@ -1,6 +1,7 @@
 import {build} from 'esbuild';
-import {mkdirSync,copyFileSync,readdirSync,readFileSync,writeFileSync} from 'node:fs';
+import {mkdirSync,copyFileSync,readdirSync,readFileSync,writeFileSync,unlinkSync} from 'node:fs';
 const out='dist/cloudflare-full';mkdirSync(out,{recursive:true});
+for(const entry of readdirSync(out,{withFileTypes:true}))if(entry.isFile())unlinkSync(out+'/'+entry.name);
 for(const e of readdirSync('public',{withFileTypes:true})){if(e.isFile())copyFileSync('public/'+e.name,out+'/'+e.name)}
 // Scope device drafts and OAuth state before the account's scripts read them.
 for(const file of ['app.js','tracker.js','phone-app.js','device-settings.js','bank-link.js']){
