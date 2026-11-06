@@ -49,7 +49,7 @@ Production schemas are already applied to the deployed standalone database. Do n
 
 The existing Cloudflare Builds production command is `node scripts/build-cloudflare-demo.mjs`; that file delegates to `build-cloudflare-full.mjs`. Deployment uses `npx wrangler deploy --config cloudflare/wrangler.jsonc`. The name is retained for compatibility; it is no longer a tutorial-only build.
 
-Nonproduction branch builds use `npx wrangler versions upload --config cloudflare/wrangler.jsonc`. This uploads an undeployed Worker version using the standalone configuration; it does not promote that version to production. Preview URLs remain disabled. The default branch command failed because it did not find the configuration in the `cloudflare` directory.
+Nonproduction branch builds use `npm run check:cloudflare` to validate the package without uploading or deploying it. Preview URLs remain disabled. The default branch command failed because it did not find the configuration in the `cloudflare` directory. A subsequent `versions upload` attempt reached Cloudflare's branch-Preview identity restriction, so branches now perform the dry-run check while main retains the production deploy command. Existing branch Previews keep their own build settings; changing Previews Base only changes defaults for new branches.
 
 An authorized maintainer can also deploy the built app with the same Wrangler config. Record the source commit and returned Worker version. A successful upload is not proof of a successful login, save, or bank authorization.
 
