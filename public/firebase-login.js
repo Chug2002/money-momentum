@@ -3,7 +3,7 @@ import {getAuth,setPersistence,inMemoryPersistence,GoogleAuthProvider,signInWith
 import QRCode from 'qrcode';
 const $=id=>document.getElementById(id);let auth,mode='login',totpEnabled=false,resolver=null,enrollmentUser=null,totpSecret=null;
 const status=message=>$('loginStatus').textContent=message;
-const busy=value=>document.querySelectorAll('button,input,select').forEach(x=>x.disabled=value);
+const busy=value=>{document.querySelectorAll('button,input,select').forEach(x=>x.disabled=value);if(!value&&!$('mfaPanel').hidden)$('mfaCode').focus()};
 class LoginError extends Error {}
 function errorMessage(error){
  if(error instanceof LoginError)return error.message;
