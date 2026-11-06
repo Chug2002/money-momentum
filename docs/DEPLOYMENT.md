@@ -49,6 +49,8 @@ Production schemas are already applied to the deployed standalone database. Do n
 
 The existing Cloudflare Builds production command is `node scripts/build-cloudflare-demo.mjs`; that file delegates to `build-cloudflare-full.mjs`. Deployment uses `npx wrangler deploy --config cloudflare/wrangler.jsonc`. The name is retained for compatibility; it is no longer a tutorial-only build.
 
+Nonproduction branch builds use `npx wrangler versions upload --config cloudflare/wrangler.jsonc`. This uploads an undeployed Worker version using the standalone configuration; it does not promote that version to production. Preview URLs remain disabled. The default branch command failed because it did not find the configuration in the `cloudflare` directory.
+
 An authorized maintainer can also deploy the built app with the same Wrangler config. Record the source commit and returned Worker version. A successful upload is not proof of a successful login, save, or bank authorization.
 
 ## Verify after deployment
