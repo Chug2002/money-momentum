@@ -15,13 +15,13 @@ async function api(path:string,body:Record<string,unknown>){
  if(!r.ok){
   const code=typeof data.error_code==='string'&&/^[A-Z0-9_]+$/.test(data.error_code)?data.error_code:'BANK_ERROR';
   const requestId=typeof data.request_id==='string'&&/^[a-zA-Z0-9_-]{1,100}$/.test(data.request_id)?data.request_id:'';
-  const redirectError=code==='INVALID_REDIRECT_URI'||code==='INVALID_FIELD'&&/redirect_uri/i.test(data.error_message||'');
+  const redirectError=code==='INVALID_REDIRECT_URI'||code==='INVALID_FIELD'&&/redirect[\s_-]*uri/i.test(data.error_message||'');
   const message=code==='TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION'?'Transaction history changed during the update. Try refreshing again.':
    code==='ITEM_LOGIN_REQUIRED'?'Your bank needs you to reconnect. Disconnect this connection and link it again.':
    ['INVALID_API_KEYS','UNAUTHORIZED_ENVIRONMENT','INVALID_ACCESS_TOKEN'].includes(code)?'The bank connection needs its setup checked. Contact the app owner; retrying your bank password will not fix this.':
    code==='INVALID_LINK_CUSTOMIZATION'?'The app owner needs to complete the Plaid Link use-case setup before connecting a bank.':
    ['PRODUCT_NOT_ENABLED','INVALID_PRODUCT'].includes(code)?'Live Transactions access is not enabled for this Plaid account yet.':
-   redirectError?'Add https://money-momentum.budgetstudio.workers.dev/account to Allowed Redirect URIs in the Plaid dashboard, then try again.':
+   redirectError?'Add '+(E().PLAID_REDIRECT_URI||ORIGIN+'/')+' to Allowed Redirect URIs in the Plaid dashboard, then try again.':
    'The bank service could not complete this request. Please try again.';
   throw new ApiError(['TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION','ITEM_LOGIN_REQUIRED'].includes(code)?409:502,message,code,requestId);
  }

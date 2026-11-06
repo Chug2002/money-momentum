@@ -1,15 +1,41 @@
-name: Tests
-on: [push, pull_request]
+name: Tests and Cloudflare build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm test
+  cloudflare-build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build the full standalone app
+        run: node scripts/build-cloudflare-full.mjs
+      - name: Verify Worker packaging without deploying
+        run: npx --no-install wrangler deploy --config cloudflare/wrangler.jsonc --dry-run --outdir dist/worker-check
+      - name: Save the checked Worker and browser assets
+        uses: actions/upload-artifact@v7
+        with:
+          name: cloudflare-app-${{ github.sha }}
+          path: |
+            dist/worker-check/
+            dist/cloudflare-full/
+          if-no-files-found: error
+          retention-days: 7
