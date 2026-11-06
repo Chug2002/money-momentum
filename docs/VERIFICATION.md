@@ -26,7 +26,7 @@ The CI build then bundles the standalone browser assets and verifies the Worker 
 - Public welcome, tutorial, and login pages returned successfully.
 - Signed-out `/account` redirects to login; anonymous financial APIs return 401.
 - Signup shows password confirmation. Live browser sign-out returned to `/login` without the earlier API error.
-- The account holder reported sign-in working. A signed-in account displayed “Saved account log loaded.” Loading an existing log is not proof that a newly edited record saved successfully.
+- The account holder reported sign-in working. A signed-in account displayed “Saved account log loaded.” The account holder later confirmed that an intended manual-plan edit remained after saving and reopening the app on their phone. The persisted values were not copied into this record.
 - Plaid's allowlist originally contained only the standalone homepage. The account return path `/account` was added with the owner's explicit approval, retaining the existing address.
 - After that correction, the app opened production Plaid Link. The account holder completed bank authorization on their phone; the signed-in app then displayed the connection and account cards. A manual refresh returned “Bank data refreshed.” No balances, transaction details, bank names, or private screenshots were copied into this documentation.
 - The tutorial screenshots in `docs/images/` use fictional data.
@@ -37,7 +37,7 @@ Complete these in the actual app and record the outcome privately; avoid putting
 
 - [ ] New email account: create, receive verification email, verify, then sign in.
 - [ ] Existing Google account: sign in and see the intended account.
-- [ ] Manual save: make an intended real edit, see “Saved,” reopen the app, and confirm it remains.
+- [x] Manual save: make an intended real edit, see “Saved,” reopen the app, and confirm it remains.
 - [ ] Second device: confirm the same signed-in account sees the saved edit.
 - [ ] Concurrent edit: confirm a conflict prompts a choice instead of silently overwriting.
 - [ ] Sign out: return to login and confirm the account is protected when revisited.
