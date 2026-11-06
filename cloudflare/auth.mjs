@@ -15,11 +15,11 @@ export async function verifyFirebaseIdToken(token,config,keys=googleKeys){
 }
 export async function sessionUser(request,env){const token=cookie(request);if(!/^[a-f0-9]{64}$/.test(token))return null;return env.DB.prepare('SELECT u.id AS userId,u.email FROM auth_sessions s JOIN auth_users u ON u.id=s.user_id WHERE s.hash=? AND s.expires>?').bind(await hash(token),Date.now()).first()}
 export async function authRoute(request,env,action,dependencies={}){
- if(action==='config'&&request.method==='GET'){const config=webConfig(env);return json(config?{configured:true,config}:{configured:false})}
+ if(action==='config'&&request.method==='GET'){const config=webConfig(env);return json(config?{configured:true,config,totpEnabled:env.FIREBASE_TOTP_MFA==='enabled'}:{configured:false})}
  if(request.method!=='POST')return json({error:'Method not allowed.'},405);
  if(new URL(request.url).origin!==env.APP_ORIGIN||request.headers.get('Origin')!==env.APP_ORIGIN)return json({error:'Open this request from Money Momentum.'},403);
  if(action==='logout'){const token=cookie(request);if(token)await env.DB.prepare('DELETE FROM auth_sessions WHERE hash=?').bind(await hash(token)).run();if(request.headers.get('Accept')?.includes('text/html'))return new Response(null,{status:303,headers:{Location:env.APP_ORIGIN+'/login','Set-Cookie':sessionCookie('',0)}});return json({ok:true},200,{'Set-Cookie':sessionCookie('',0)})}
- if(action!=='session')return json({error:'Not found.'},404);
+ if(!['session','revoke-sessions'].includes(action))return json({error:'Not found.'},404);
  const config=webConfig(env);if(!config)return json({error:'Sign-in setup is not finished yet.'},503);
  try{
   const bucket=await hash((request.headers.get('CF-Connecting-IP')||'unknown')+':'+Math.floor(Date.now()/60000));
@@ -30,7 +30,11 @@ export async function authRoute(request,env,action,dependencies={}){
   const lookup=await (dependencies.fetcher||fetch)('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(config.apiKey),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:body.idToken}),signal:AbortSignal.timeout(15000)});
   if(!lookup.ok)return json({error:'Sign in again to continue.'},401);const provider=await lookup.json(),user=provider.users?.[0];
   if(!user||user.localId!==payload.sub||user.disabled||user.emailVerified!==true||user.email?.toLowerCase()!==payload.email.toLowerCase()||Number(user.validSince||0)>payload.auth_time)return json({error:'Verify your email and sign in again.'},401);
-  const id='firebase:'+payload.sub;await env.DB.prepare('INSERT INTO auth_users(id,email) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET email=excluded.email').bind(id,payload.email.toLowerCase()).run();
+  const id='firebase:'+payload.sub;
+  if(action==='revoke-sessions'){await env.DB.prepare('DELETE FROM auth_sessions WHERE user_id=?').bind(id).run();return json({ok:true},200,{'Set-Cookie':sessionCookie('',0)})}
+  // A signed first-factor token issued before enrollment must not bypass MFA.
+  if(user.mfaInfo?.length&&!user.mfaInfo.some(factor=>factor.totpInfo&&factor.mfaEnrollmentId===payload.firebase?.second_factor_identifier&&payload.firebase?.sign_in_second_factor==='totp'))return json({error:'Complete your authenticator code, then sign in again.'},401);
+  await env.DB.prepare('INSERT INTO auth_users(id,email) VALUES(?,?) ON CONFLICT(id) DO UPDATE SET email=excluded.email').bind(id,payload.email.toLowerCase()).run();
   const token=random(),seconds=Math.max(1,Math.min(3600,Math.floor(payload.exp-Date.now()/1000)));
   await env.DB.prepare('INSERT INTO auth_sessions(hash,user_id,expires) VALUES(?,?,?)').bind(await hash(token),id,Date.now()+seconds*1000).run();
   return json({ok:true},200,{'Set-Cookie':sessionCookie(token,seconds)});

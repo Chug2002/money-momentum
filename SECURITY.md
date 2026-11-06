@@ -1,5 +1,7 @@
 # Security model
 
+Optional authenticator-app MFA is handled by Firebase Identity Platform. The server checks current provider enrollment against signed second-factor claims before issuing a session. Enrollment requests revocation of existing app sessions. See [MFA configuration, recovery, and session limits](docs/MFA.md).
+
 ## Current standalone runtime
 
 The workers.dev app uses the Firebase-backed session layer in `cloudflare/auth.mjs` and the boundary in `cloudflare/full-worker.ts`. The old Sites gateway is not the source of identity for this standalone Worker. The separately hosted Sites deployment retains its own access configuration.

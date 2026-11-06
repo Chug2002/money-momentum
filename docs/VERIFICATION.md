@@ -33,6 +33,11 @@ The CI build then bundles the standalone browser assets and verifies the Worker 
 
 ## Account-holder acceptance checklist
 
+Authenticator MFA: Identity Platform was upgraded with owner approval while retaining Spark, and project configuration returned enabled TOTP with one adjacent interval. Synthetic MFA client and signed server-policy tests pass. Real account-holder enrollment and fresh MFA sign-in remain to be completed; project-level configuration does not mean an account is enrolled.
+
+- [ ] Authenticator setup: scan the private QR code, confirm a current code, then complete a fresh MFA sign-in.
+- [ ] Authenticator failure: a wrong code does not open the planner; a current valid code succeeds.
+
 Complete these in the actual app and record the outcome privately; avoid putting financial records or screenshots in public issues.
 
 - [ ] New email account: create, receive verification email, verify, then sign in.
