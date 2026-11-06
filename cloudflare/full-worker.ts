@@ -28,7 +28,7 @@ async function handle(request:Request,env:any){
   if(url.pathname.startsWith('/api/'))return json('Not found.',404);
   if(!['GET','HEAD'].includes(request.method))return json('Method not allowed.',405);
   const privateHtml=html.replace('<head>','<head><base href="/"><meta name="momentum-account" content="'+encodeURIComponent(user.userId)+'"><script src="/account-storage.js"></script>').replaceAll('/signin-with-chatgpt?return_to=/','/login').replaceAll('/signout-with-chatgpt?return_to=/','/logout');
-  return new Response(request.method==='HEAD'?null:privateHtml,{headers:{'Content-Type':'text/html;charset=utf-8'}});
+  return new Response(request.method==='HEAD'?null:privateHtml.replace('</header>','</header><nav aria-label="Account security" style="padding:12px 24px;text-align:right"><a href="/login?security=1">Set up authenticator protection</a></nav>'),{headers:{'Content-Type':'text/html;charset=utf-8'}});
  }
  if(!['GET','HEAD'].includes(request.method))return json('Method not allowed.',405);
  if(url.pathname==='/signin-with-chatgpt')return Response.redirect(url.origin+'/login',302);

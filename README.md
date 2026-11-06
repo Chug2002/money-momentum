@@ -1,5 +1,7 @@
 # Money Momentum
 
+Authenticator-app MFA is available as optional enrollment for verified accounts. Once enrolled, a new sign-in requires an authenticator code. See [setup and recovery details](docs/MFA.md).
+
 [Open the app](https://money-momentum.budgetstudio.workers.dev/) · [Try the fictional-data tutorial](https://money-momentum.budgetstudio.workers.dev/demo) · [Sign in](https://money-momentum.budgetstudio.workers.dev/login)
 
 A personal finance web application with a public tutorial and private per-user planning. It combines manual accounts, bills, debt planning, cash-flow projections, and optional read-only bank data through Plaid.
